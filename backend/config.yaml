@@ -1,0 +1,15 @@
+DB:
+  DBNAME: "svb"
+  HOST: "127.0.0.1"
+  PORT: 3306
+  USERNAME: "root"
+  PASSWORD: "root"
+  CONFIG: "" # 其他配置, 例如时区
+  LOGMODE: "info" # 日志级别 silent, error, warn, info, 默认 info
+LOG:
+  LEVEL: "DEBUG"
+  PREFIX: "blog"
+SERVER:
+  HOST: "0.0.0.0"
+  BACKPORT: 80
+  ENV: "dev"

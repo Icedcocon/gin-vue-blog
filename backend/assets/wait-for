@@ -1,0 +1,217 @@
+#!/bin/sh
+
+# The MIT License (MIT)
+#
+# Copyright (c) 2017 Eficode Oy
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+# 定义脚本版本号
+VERSION="2.2.3"
+
+# 将传入的参数存入变量
+set -- "$@" -- "$TIMEOUT" "$QUIET" "$PROTOCOL" "$HOST" "$PORT" "$result"
+# 默认超时时间为15秒
+TIMEOUT=15
+# 默认不静默输出
+QUIET=0
+# 请求协议,支持tcp和http
+PROTOCOL="tcp"
+
+# 定义错误输出函数
+echoerr() {
+  # 如果不是静默模式则打印错误  
+  if [ "$QUIET" -ne 1 ]; then printf "%s\n" "$*" 1>&2; fi
+}
+
+# 定义使用帮助函数
+usage() {
+  # 接收退出码
+  exitcode="$1"
+  # 输出使用帮助文本
+  cat << USAGE >&2
+Usage:
+  $0 host:port|url [-t timeout] [-- command args]
+  -q | --quiet                        Do not output any status messages
+  -t TIMEOUT | --timeout=timeout      Timeout in seconds, zero for no timeout
+  -v | --version                      Show the version of this tool
+  -- COMMAND ARGS                     Execute command with args after the test finishes
+USAGE
+  # 使用传入的退出码退出
+  exit "$exitcode"
+}
+
+# 定义等待函数
+wait_for() {
+  # 根据协议检查依赖命令
+  case "$PROTOCOL" in
+    tcp)
+      if ! command -v nc >/dev/null; then
+        echoerr 'nc command is missing!'
+        exit 1
+      fi
+      ;;
+    http)
+      if ! command -v wget >/dev/null; then
+        echoerr 'wget command is missing!'
+        exit 1
+      fi
+      ;;
+  esac
+
+  # 计算超时时间 
+  TIMEOUT_END=$(($(date +%s) + TIMEOUT))
+
+  while :; do
+  # 根据协议测试连接
+    case "$PROTOCOL" in
+      tcp) 
+        nc -w 1 -z "$HOST" "$PORT" > /dev/null 2>&1
+        ;;
+      http)
+        wget --timeout=1 -q "$HOST" -O /dev/null > /dev/null 2>&1 
+        ;;
+      *)
+        echoerr "Unknown protocol '$PROTOCOL'"
+        exit 1
+        ;;
+    esac
+
+    # 存储命令结果
+    result=$?
+        
+    # 如果连接成功
+    if [ $result -eq 0 ] ; then
+      # 如果有额外命令则执行
+      if [ $# -gt 7 ] ; then
+        for result in $(seq $(($# - 7))); do
+          result=$1
+          shift
+          set -- "$@" "$result"
+        done
+
+        TIMEOUT=$2 QUIET=$3 PROTOCOL=$4 HOST=$5 PORT=$6 result=$7
+        shift 7
+        exec "$@"
+      fi
+      # 退出
+      exit 0
+    fi
+
+    # 如果超时则报错退出
+    if [ $TIMEOUT -ne 0 -a $(date +%s) -ge $TIMEOUT_END ]; then
+      echo "Operation timed out" >&2
+      exit 1
+    fi
+
+    # 否则睡眠1秒后继续循环
+    sleep 1
+  done
+}
+
+####################################### 执行 #####################################
+
+# 解析参数
+while :; do
+  case "$1" in
+    http://*|https://*)
+    HOST="$1"
+    PROTOCOL="http"
+    shift 1
+    ;;
+    *:* )
+    HOST=$(printf "%s\n" "$1"| cut -d : -f 1)
+    PORT=$(printf "%s\n" "$1"| cut -d : -f 2)
+    shift 1
+    ;;
+    -v | --version)
+    echo $VERSION
+    exit
+    ;;
+    -q | --quiet)
+    QUIET=1
+    shift 1
+    ;;
+    -q-*)
+    QUIET=0
+    echoerr "Unknown option: $1"
+    usage 1
+    ;;
+    -q*)
+    QUIET=1
+    result=$1
+    shift 1
+    set -- -"${result#-q}" "$@"
+    ;;
+    -t | --timeout)
+    TIMEOUT="$2"
+    shift 2
+    ;;
+    -t*)
+    TIMEOUT="${1#-t}"
+    shift 1
+    ;;
+    --timeout=*)
+    TIMEOUT="${1#*=}"
+    shift 1
+    ;;
+    --)
+    shift
+    break
+    ;;
+    --help)
+    usage 0
+    ;;
+    -*)
+    QUIET=0
+    echoerr "Unknown option: $1"
+    usage 1
+    ;;
+    *)
+    QUIET=0
+    echoerr "Unknown argument: $1"
+    usage 1
+    ;;
+  esac
+done
+
+# 验证超时时间格式
+if ! [ "$TIMEOUT" -ge 0 ] 2>/dev/null; then
+  echoerr "Error: invalid timeout '$TIMEOUT'"
+  usage 3
+fi
+
+# 根据协议验证参数
+case "$PROTOCOL" in
+  tcp)
+    if [ "$HOST" = "" ] || [ "$PORT" = "" ]; then
+      echoerr "Error: you need to provide a host and port to test."
+      usage 2
+    fi
+  ;;
+  http)
+    if [ "$HOST" = "" ]; then
+      echoerr "Error: you need to provide a host to test."
+      usage 2
+    fi
+  ;;
+esac
+
+# 调用等待函数
+wait_for "$@"

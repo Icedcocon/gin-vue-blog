@@ -1,0 +1,61 @@
+version: "1"
+
+networks:
+  gvb-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${SUBNET}
+
+services:
+  gvb-mariadb:
+    build: ../build/mariadb
+    container_name: gvb-mariadb
+    restart: always
+    volumes:
+      - ${GVB_DATA_DIRECTORY}/data/mariadb:/var/lib/mysql
+    environment:
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD} # root 账号的密码
+      - TZ=Asia/Shanghai
+    ports:
+      - ${MARIADB_PORT}:3306 # 自定义的是暴露出去的端口, MySQL 容器内运行固定为 3306
+    networks:
+      gvb-network:
+        ipv4_address: ${MARIADB_HOST}
+
+  gvb-server:
+    build: ../../backend
+    container_name: gvb-server
+    restart: always
+    depends_on:
+      #gvb-redis:
+      #  condition: service_started
+      gvb-mariadb:
+        condition: service_started
+    # 依赖 mariadb 启动后再开启后端服务
+    # 注意如果注释掉下面这行需要在 gin-blog-server 的 Dockerfile 打开 ENTRYPOINT 那行注释
+    command: ./wait-for ${MARIADB_HOST}:3306 -t 5 -- ./backend -c config.yaml
+    #volumes:
+      #- ${GVB_DATA_DIRECTORY}/file/uploaded:/gvb/public/uploaded
+      # - ${GVB_DATA_DIRECTORY}/file/markdown:/gvb/public/markdown # 目前是前端导出
+    environment:
+      # 以下环境变量会覆盖后端源码中 config.docker.toml 中的配置
+      - TZ=Asia/Shanghai
+      # SERVER
+      - SERVER_BACKPORT=${BACK_SERVER_PORT} # 后台服务端口
+      #- SERVER_FRONTPORT=:${FRONT_SERVER_PORT} # 前台服务端口
+      # DB
+      - DB_HOST=${MARIADB_HOST}
+      - DB_PORT=3306
+      - DB_DBNAME=gvb # 默认 gvb, 改动需要修改 gvb-mysql 镜像
+      - DB_USERNAME=root
+      - DB_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      # Redis
+      #- REDIS_ADDR=${REDIS_HOST}:6379
+      #- REDIS_PASSWORD=${REDIS_PASSWORD}
+    ports:
+      - ${BACK_SERVER_PORT}:${BACK_SERVER_PORT}
+      #- ${FRONT_SERVER_PORT}:${FRONT_SERVER_PORT}
+    networks:
+      gvb-network:
+        ipv4_address: ${BACKEND_HOST}

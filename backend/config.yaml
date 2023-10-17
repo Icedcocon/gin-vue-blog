@@ -9,7 +9,27 @@ DB:
 LOG:
   LEVEL: "DEBUG"
   PREFIX: "blog"
+  FILENAME: "log/blog.log"
 SERVER:
+  MODE: "debug"   # debug 开发环境, release 生产环境
   HOST: "0.0.0.0"
   BACKPORT: 80
-  ENV: "dev"
+UPLOAD:
+  OSSTYPE: "local"              # 控制存储: local、qiniu
+  PATH: "public/uploaded"       # 本地文件访问路径 (OSSTYPE="local" 才生效)
+  STOREPATH: "public/uploaded"  # 本地文件上传路径 (OSSTYPE="local" 才生效)
+  # Markdown 目前只支持本地上传 (目前使用前端导出, 该配置无效)
+  MDPATH: "public/markdown/" # Markdown 访问路径
+  MDSTOREPATH: "public/markdown/" # Markdown 上传路径
+SESSION:
+  NAME: "mysession"
+  SALT: "salt"
+  MAXAGE: 600       # 秒
+REDIS:
+  DB: 7
+  ADDR: "127.0.0.1:6379"
+  PASSWORD: ""
+JWT:
+  SECRET: "abc123321"
+  EXPIRE: 24 # 过期时间 (小时)
+  ISSUER: "gin-vue-blog"

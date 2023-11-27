@@ -9,6 +9,7 @@ ENV WORK_PATH /project/backend
 WORKDIR /backend
 COPY --from=build  ${WORK_PATH}/backend .
 COPY --from=build  ${WORK_PATH}/config.yaml .
+COPY --from=0 ${WORK_PATH}/assets/ip2region.xdb ./assets/ip2region.xdb
 COPY --from=0 ${WORK_PATH}/assets/wait-for .
 RUN chmod a+x ./wait-for
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime

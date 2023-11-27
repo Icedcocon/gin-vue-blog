@@ -5,7 +5,9 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/sirupsen/logrus"
@@ -61,7 +63,15 @@ func InitGLogger() {
 	// 返回函数调用的文件名和行号
 	GLogger.SetReportCaller(true)
 	// 设置日志输出
-	f, _ := os.OpenFile(config.GlobalConfig.LOG.FileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0755)
+	err = os.MkdirAll(path.Dir(config.GlobalConfig.LOG.FileName), 0755)
+	if err != nil {
+		// 处理文件夹创建失败的情况
+		log.Fatal(err)
+	}
+	f, err := os.OpenFile(config.GlobalConfig.LOG.FileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0755)
+	if err != nil {
+		log.Fatal(err)
+	}
 	GLogger.SetOutput(io.MultiWriter(os.Stdout, f))
 	// 设置日志格式
 	// GLogger.SetFormatter(&logrus.TextFormatter{

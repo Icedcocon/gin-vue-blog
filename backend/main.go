@@ -1,29 +1,24 @@
 package main
 
 import (
-	"backend/pkg/config"
-	"backend/pkg/utils"
-	"fmt"
+	"backend/pkg/routes"
+	"log"
+
+	"golang.org/x/sync/errgroup"
 )
 
+var g errgroup.Group
+
 func main() {
-	// 初始化配置信息
-	utils.InitViper()
-	utils.InitGLogger()
-	db := utils.InitMariaDB()
+	// 初始化全局变量
+	routes.InitGlobalVariable()
 
-	logger := utils.GLogger
-	logger.Info("Hello World")
-	logger.Infof("Config is %v", config.GlobalConfig)
-	logger.Error("Hello World")
-	logger.Errorf("Config is %v", config.GlobalConfig)
-	logger.Trace("Hello World")
-	logger.Tracef("Config is %v", config.GlobalConfig)
-	logger.Debug("Hello World")
-	logger.Debugf("Config is %v", config.GlobalConfig)
-	logger.Warn("Hello World")
-	logger.Warnf("Config is %v", config.GlobalConfig)
+	// 后台接口服务
+	g.Go(func() error {
+		return routes.BackendServer().ListenAndServe()
+	})
 
-	fmt.Printf("Config is %v", config.GlobalConfig)
-	fmt.Printf("Config is %v", db)
+	if err := g.Wait(); err != nil {
+		log.Fatal(err)
+	}
 }

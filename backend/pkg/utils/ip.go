@@ -2,12 +2,10 @@ package utils
 
 import (
 	"errors"
-	"fmt"
 	"net"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/lionsoul2014/ip2region/binding/golang/xdb"
 	"go.uber.org/zap"
 	"xojoc.pw/useragent"
 )
@@ -74,66 +72,68 @@ var vIndex []byte // 缓存 VetorIndex 索引, 减少一次固定的 IO 操作
 
 // 获取地域信息: 中国|0|江苏省|苏州市|电信
 func (*ipUtil) GetIpSource(ipAddress string) string {
-	var dbPath = "./assets/ip2region.xdb" // IP 数据库文件
-	// 完全基于文件查询, 每次都读取文件
-	// searcher, err := xdb.NewWithFileOnly(dbPath)
+	// var dbPath = "./assets/ip2region.xdb" // IP 数据库文件
+	// // 完全基于文件查询, 每次都读取文件
+	// // searcher, err := xdb.NewWithFileOnly(dbPath)
 
-	// 缓存 VetorIndex 索引, 减少一次固定的 IO 操作
-	if vIndex == nil {
-		var err error
-		vIndex, err = xdb.LoadVectorIndexFromFile(dbPath)
-		if err != nil {
-			GLogger.Error(fmt.Sprintf("failed to load vector index from `%s`: %s\n", dbPath, err))
-			return ""
-		}
-	}
-	searcher, err := xdb.NewWithVectorIndex(dbPath, vIndex)
+	// // 缓存 VetorIndex 索引, 减少一次固定的 IO 操作
+	// if vIndex == nil {
+	// 	var err error
+	// 	vIndex, err = xdb.LoadVectorIndexFromFile(dbPath)
+	// 	if err != nil {
+	// 		GLogger.Error(fmt.Sprintf("failed to load vector index from `%s`: %s\n", dbPath, err))
+	// 		return ""
+	// 	}
+	// }
+	// searcher, err := xdb.NewWithVectorIndex(dbPath, vIndex)
 
-	if err != nil {
-		GLogger.Error("failed to create searcher with vector index: ", zap.Error(err))
-		return ""
-	}
-	defer searcher.Close()
+	// if err != nil {
+	// 	GLogger.Error("failed to create searcher with vector index: ", zap.Error(err))
+	// 	return ""
+	// }
+	// defer searcher.Close()
 
-	// 国家|区域|省份|城市|ISP
-	// 只有中国的数据绝大部分精确到了城市, 其他国家部分数据只能定位到国家, 后面的选项全部是 0
-	region, err := searcher.SearchByStr(ipAddress)
-	if err != nil {
-		GLogger.Error(fmt.Sprintf("failed to search ip(%s): %s\n", ipAddress, err))
-		return ""
-	}
+	// // 国家|区域|省份|城市|ISP
+	// // 只有中国的数据绝大部分精确到了城市, 其他国家部分数据只能定位到国家, 后面的选项全部是 0
+	// region, err := searcher.SearchByStr(ipAddress)
+	// if err != nil {
+	// 	GLogger.Error(fmt.Sprintf("failed to search ip(%s): %s\n", ipAddress, err))
+	// 	return ""
+	// }
+	region := "还没查呢！"
 	return region
 }
 
 // 获取 IP 简易信息, 例如: "江苏省苏州市 电信"
 func (i *ipUtil) GetIpSourceSimpleIdle(ipAddress string) string {
-	region := i.GetIpSource(ipAddress) // 国家|区域|省份|城市|ISP
+	// region := i.GetIpSource(ipAddress) // 国家|区域|省份|城市|ISP
 
-	// 检测到是内网, 直接返回 "内网IP"
-	// 0|0|0|内网IP|内网IP
-	if strings.Contains(region, "内网IP") {
-		return "内网IP"
-	}
+	// // 检测到是内网, 直接返回 "内网IP"
+	// // 0|0|0|内网IP|内网IP
+	// if strings.Contains(region, "内网IP") {
+	// 	return "内网IP"
+	// }
 
-	// 一般无法获取到区域
-	// 中国|0|江苏省|苏州市|电信
-	ipSource := strings.Split(region, "|")
-	if ipSource[0] != "中国" && ipSource[0] != "0" {
-		return ipSource[0]
-	}
-	if ipSource[2] == "0" {
-		ipSource[2] = ""
-	}
-	if ipSource[3] == "0" {
-		ipSource[3] = ""
-	}
-	if ipSource[4] == "0" {
-		ipSource[4] = ""
-	}
-	if ipSource[2] == "" && ipSource[3] == "" && ipSource[4] == "" {
-		return ipSource[0]
-	}
-	return ipSource[2] + ipSource[3] + " " + ipSource[4]
+	// // 一般无法获取到区域
+	// // 中国|0|江苏省|苏州市|电信
+	// ipSource := strings.Split(region, "|")
+	// if ipSource[0] != "中国" && ipSource[0] != "0" {
+	// 	return ipSource[0]
+	// }
+	// if ipSource[2] == "0" {
+	// 	ipSource[2] = ""
+	// }
+	// if ipSource[3] == "0" {
+	// 	ipSource[3] = ""
+	// }
+	// if ipSource[4] == "0" {
+	// 	ipSource[4] = ""
+	// }
+	// if ipSource[2] == "" && ipSource[3] == "" && ipSource[4] == "" {
+	// 	return ipSource[0]
+	// }
+	// return ipSource[2] + ipSource[3] + " " + ipSource[4]
+	return "先别查了！"
 }
 
 func (*ipUtil) GetUserAgent(c *gin.Context) *useragent.UserAgent {

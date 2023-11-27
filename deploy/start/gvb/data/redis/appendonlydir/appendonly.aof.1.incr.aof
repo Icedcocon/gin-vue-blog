@@ -1,0 +1,16 @@
+*2
+$6
+SELECT
+$1
+7
+*5
+$3
+SET
+$37
+user:eb3de1d925f18d86153f46b2c48ee91b
+$791
+{"id":1,"user_info_id":1,"username":"admin","nickname":"管理员","email":"","avatar":"https://www.bing.com/rp/ar_9isCNU2Q-VG1yEDDHnx8HAFQ.png","intro":"我是管理员用户！","website":"https://www.hahacode.cn","ip_address":"100.71.223.166:51217","ip_source":"先别查了！","last_login_time":"2023-11-27T06:45:45.967798157Z","login_type":1,"article_like_set":[],"comment_like_set":[],"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJyb2xlIjoiYWRtaW4iLCJ1dWlkIjoiZWIzZGUxZDkyNWYxOGQ4NjE1M2Y0NmIyYzQ4ZWU5MWIiLCJpc3MiOiJnaW4tdnVlLWJsb2ciLCJleHAiOjE3MDExNTM5NDV9.9iDpVXNpaTHYrklKtIZZajeRUu0u_rKhccGjr82t9Eg","password":"$2a$10$np.P54Jep7GB/H5vG1PcbudYcxAAf1iiBf7NzsQJT9ZfsYz6tFPcm","is_disable":0,"browser":"unknown","os":"unknown","role_labels":["admin"],"is_offline":0}
+$4
+PXAT
+$13
+1701068146021

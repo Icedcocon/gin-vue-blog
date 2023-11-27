@@ -31,7 +31,6 @@ func (*User) Login(c *gin.Context, username, password string) (loginVo resp.Logi
 	}
 	// 获取用户详细信息 DTO
 	userDetailDTO := convertUserDetailDTO(userAuth, c)
-
 	// 登录信息正确, 生成 Token
 	// TODO: 目前只给用户设定一个角色, 获取第一个值就行, 后期优化: 给用户设置多个角色
 	// UUID 生成方法: ip + 浏览器信息 + 操作系统信息
@@ -49,7 +48,7 @@ func (*User) Login(c *gin.Context, username, password string) (loginVo resp.Logi
 		IpSource:      userDetailDTO.IpSource,
 		LastLoginTime: userDetailDTO.LastLoginTime,
 	}, "ip_address", "ip_source", "last_login_time")
-
+	utils.GLogger.Info("我运行到了Redis之前!!!!!!")
 	// 保存用户信息到 Session 和 Redis 中
 	session := sessions.Default(c)
 	// ! session 中只能存储字符串
